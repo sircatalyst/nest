@@ -7,11 +7,6 @@ export interface User extends mongoose.Document {
 	email: string;
 	password: string;
 	phone: string;
-	activated: number;
-	activation_code: string;
-	verification_code: string;
-	reset_password: string;
-	password_expire: number;
-	used_password: number;
+	role?: string;
 	created: Date;
 }

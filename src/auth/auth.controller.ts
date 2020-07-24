@@ -11,6 +11,9 @@ import {
   UseGuards,
   ParseUUIDPipe,
   HttpCode,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
 import {
   LoginDTO,
@@ -30,6 +33,8 @@ import {
 import { UserService } from '../user/user.service';
 import { CreateUserDTO, UpdateUserProfileDTO } from '../user/dto/user.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { storageOptions, fileFilter } from 'src/middleware/multer';
 
 @Controller('auth')
 @UsePipes(new ValidationPipe())
@@ -39,6 +44,9 @@ export class AuthController {
     private userService: UserService,
   ) {}
 
+   /**   
+    * @desc Route for users to register
+    */
   @Post('register')
   async register(@Body() registerPayload: CreateUserDTO): Promise<any> {
     const { confirm_password, password } = registerPayload;
@@ -47,6 +55,9 @@ export class AuthController {
     return { data };
   }
 
+   /**   
+    * @desc Route for users to register
+    */
   @Post('login')
   @HttpCode(200)
   async login(@Body() loginPayload: LoginDTO): Promise<any> {
@@ -55,47 +66,9 @@ export class AuthController {
     return { data: user, token };
   }
 
-  @Get('activate')
-  async activate(@Query() activation_code: ActivateDTO): Promise<any> {
-    const user = await this.authService.activate(activation_code);
-    return { data: user };
-  }
-
-  @Patch('forget')
-  async forget(@Body() forgetPayload: ForgetDTO): Promise<any> {
-    const user = await this.authService.forget(forgetPayload);
-    return { user };
-  }
-
-  @Patch('reset/:reset_password_code')
-  async resetPassword(
-    @Param('reset_password_code', new ParseUUIDPipe())
-    reset_password_code: string,
-    @Body() verifyPayload: VerifyBodyDTO,
-  ): Promise<any> {
-    ValidatePasswordForReset(verifyPayload);
-    const user = await this.authService.resetPassword(
-      reset_password_code,
-      verifyPayload,
-    );
-    return { data: { status: 'success' } };
-  }
-
-  @Patch('change')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth('JWT')
-  async changePassword(
-    @Body() verifyPayload: ChangePasswordBodyDTO,
-    @LoggedInUser() loggedInUser: any,
-  ): Promise<any> {
-    ValidatePasswordForChange(verifyPayload);
-    const user = await this.authService.changePassword(
-      verifyPayload,
-      loggedInUser,
-    );
-    return { data: { status: 'success' } };
-  }
-
+  /**   
+    * @desc Route for users to update profile
+    */
   @Patch('profile')
   @UseGuards(AuthGuard('jwt'))
   async updateProfile(
@@ -105,5 +78,23 @@ export class AuthController {
     user.id = user._id;
     const data = await this.userService.updateUserProfile(user, updatePayload);
     return { data };
+  }
+
+  /**   
+    * @desc Route for users to add image
+    */
+  @Post('avatar')
+  @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: {
+        fileSize: 100000, //1mb
+      },
+      fileFilter: fileFilter,
+      storage: storageOptions,
+    }),
+  )
+  async uploadAvatar(@UploadedFile() file): Promise<any> {
+    return file;
   }
 }

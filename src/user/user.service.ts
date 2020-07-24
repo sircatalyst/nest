@@ -1,13 +1,12 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PaginateModel } from 'mongoose';
-import * as uuid from 'uuid';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './interface/user.interface';
 
 import {
   UpdateUserProfileDTO,
   CreateUserDTO,
-  FindOneDTO,
+  FindOneDTO
 } from './dto/user.dto';
 import 'dotenv/config';
 
@@ -21,13 +20,6 @@ export class UserService {
     const userEmail = await this.userModel.findOne({ email });
 
     if (userEmail) {
-      if (!userEmail.activated) {
-        throw new HttpException(
-          'User already exists, Please kindly verify your account',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
       throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
     }
 
@@ -38,10 +30,6 @@ export class UserService {
         HttpStatus.BAD_REQUEST,
       );
     }
-
-    const activationCode: string = uuid.v4();
-    createUserPayload.activated = 0;
-    createUserPayload.activation_code = activationCode;
     const createUser = new this.userModel(createUserPayload);
     const createdUser = await createUser.save();
 
@@ -97,6 +85,32 @@ export class UserService {
       const updatedUser = await this.userModel.findOneAndUpdate(
         { _id: id },
         { first_name, last_name },
+        {
+          new: true,
+        },
+      );
+
+      return this.sanitizeUserResponse(updatedUser);
+    } catch (error) {
+      if (
+        error.message === 'Not Found' ||
+        /Cast to ObjectId/g.test(error.message)
+      ) {
+        throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async makeUserAdmin(
+    param: FindOneDTO
+  ): Promise<User> {
+    try {
+      const { id } = param;
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        { _id: id },
+        { role: "admin" }, 
         {
           new: true,
         },

@@ -45,11 +45,7 @@ export class CreateUserDTO {
   @ApiProperty({ type: String, description: 'last_name' })
   last_name: string;
 
-  activated?: number;
-  activation_code?: string;
-  reset_password?: string;
-  password_expire?: string;
-  used_password?: number;
+  role?: string;
 }
 
 export class UpdateUserProfileDTO {

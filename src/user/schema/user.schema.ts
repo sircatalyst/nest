@@ -26,23 +26,9 @@ export const UserSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  activated: {
-    type: Boolean,
-  },
-  activation_code: {
+  role: {
     type: String,
-  },
-  reset_password: {
-    type: String,
-    default: null,
-  },
-  password_expire: {
-    type: Number,
-    default: null,
-  },
-  used_password: {
-    type: Boolean,
-    default: false,
+    default: 'user',
   },
   created: {
     type: Date,

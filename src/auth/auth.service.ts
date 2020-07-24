@@ -11,7 +11,7 @@ import "dotenv/config";
 
 @Injectable()
 export class AuthService {
-	constructor(@InjectModel("User") private userModel: Model<User>) {}
+	constructor(@InjectModel("User") private userModel: Model<User>) {}	
 
 	async login(loginPayload: LoginDTO): Promise<User> {
 
@@ -19,7 +19,6 @@ export class AuthService {
 		const user = await this.userModel.findOne({ email });
 
 		if (!user) {
-
 			throw new HttpException(
 				"Invalid Credentials",
 				HttpStatus.UNAUTHORIZED
@@ -27,15 +26,6 @@ export class AuthService {
 		}
 
 		if (await bcrypt.compare(password, user.password)) {
-
-			if (!user.activated) {
-
-				throw new HttpException(
-					"Please kindly verify your account to login",
-					HttpStatus.UNAUTHORIZED
-				);
-			}
-
 			return this.sanitizeAuthResponse(user);
 		} else {
 
@@ -44,94 +34,6 @@ export class AuthService {
 				HttpStatus.UNAUTHORIZED
 			);
 		}
-	}
-
-	async activate(payload: any): Promise<User> {
-		const { activation_code } = payload;
-		const user = await this.userModel.findOne({ activation_code });
-
-		if (!user) {
-			throw new HttpException("Forbidden Attempt", HttpStatus.FORBIDDEN);
-		}
-
-
-		const updatedUser = await this.userModel.findOneAndUpdate(
-			{ _id: user._id },
-			{ activated: 1 },
-			{
-				new: true
-			}
-		);
-		if (!updatedUser) {
-
-			throw new HttpException(
-				"Internal Server Error",
-				HttpStatus.FORBIDDEN
-			);
-		}
-
-		return this.sanitizeAuthResponse(updatedUser);
-	}
-
-	async forget(payload: any): Promise<any> {
-		const { email } = payload;
-		const user = await this.userModel.findOne({ email });
-
-		if (!user) {
-			throw new HttpException("Forbidden Attempt", HttpStatus.FORBIDDEN);
-		}
-
-
-		const resetCode: string = uuid.v4();
-		const dateNow: number = Date.now() + 42300;
-
-		const updatedUser = await this.userModel.findOneAndUpdate(
-			{ _id: user._id },
-			{
-				reset_password: resetCode,
-				used_password: 0,
-				password_expire: dateNow
-			},
-			{
-				new: true
-			}
-		);
-
-		if (!updatedUser) {
-
-			throw new HttpException(
-				"Internal Server Error",
-				HttpStatus.FORBIDDEN
-			);
-		}
-
-		return updatedUser;
-	}
-
-	async resetPassword(
-		paramPayload: string,
-		bodyPayload: VerifyBodyDTO
-	): Promise<string> {
-
-		const { new_password } = bodyPayload;
-
-		const hashedPassword = await bcrypt.hash(new_password, 10);
-
-		const user = await this.userModel.findOneAndUpdate(
-			{
-				reset_password: paramPayload,
-				used_password: 0,
-				password_expire: { $gt: Date.now() }
-			},
-			{ used_password: 1, reset_password: null, password: hashedPassword }
-		);
-
-		if (!user) {
-
-			throw new HttpException("Forbidden Attempt", HttpStatus.FORBIDDEN);
-		}
-
-		return "success";
 	}
 
 	async changePassword(
@@ -175,7 +77,6 @@ export class AuthService {
 	}
 
 	async sanitizeAuthResponse(user: any) {
-
 		user = user.toObject();
 		delete user.password;
 		return user;

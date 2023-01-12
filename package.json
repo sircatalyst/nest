@@ -30,7 +30,7 @@
     "@types/mongoose-paginate": "^5.0.8",
     "bcrypt": "^5.0.0",
     "class-transformer": "^0.2.3",
-    "class-validator": "^0.12.2",
+    "class-validator": "^0.14.0",
     "dotenv": "^8.2.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.25",
